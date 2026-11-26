@@ -173,7 +173,7 @@ local function LoadStockLoader()
  end)
 end
 
-local function LoadScript(tier)
+local function LoadScript("Premium")
  if tier == "Free" then
  local url = Scripts.Free[GameId]
  if url then
@@ -231,7 +231,7 @@ local function ResolveAndLoadKey(keyStr, hooks)
 		elapsedStr = elapsedStr,
 	})
 
-	LoadScript("Free")
+	LoadScript("Premium")
 end
 
 local function ShowKeyUI()
