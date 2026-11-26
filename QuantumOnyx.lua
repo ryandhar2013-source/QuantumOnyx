@@ -187,35 +187,52 @@ local function LoadScript(tier)
 end
 
 local function ResolveAndLoadKey(keyStr, hooks)
- hooks = hooks or {}
- local onStatus = hooks.onStatus or function() end
- local onSuccess = hooks.onSuccess or function() end
- local onFail = hooks.onFail or function() end
+	hooks = hooks or {}
+	local onStatus = hooks.onStatus or function() end
+	local onSuccess = hooks.onSuccess or function() end
+	local onFail = hooks.onFail or function() end
 
- keyStr = keyStr and tostring(keyStr):gsub("%s+", "") or ""
- if keyStr == "" then
- onFail("empty")
- return
- end
+	keyStr = keyStr and tostring(keyStr):gsub("%s+", "") or ""
+	if keyStr == "" then
+		onFail("empty")
+		return
+	end
 
- local startTime = os.clock()
- if keyStr == "Script" then
-		local elapsedStr = string.format("%.2fs", os.clock() - startTime)
+	local startTime = os.clock()
+	onStatus("Checking local key...")
 
-		SaveKey(keyStr)
-		getgenv().script_key = keyStr
-		getgenv().key = keyStr
-		getgenv().key_expire = 0
-		getgenv().key_note = "Local bypass key"
-		getgenv().key_executions = 0
-		if type(_G) == "table" then _G.script_key = keyStr end
-		if type(shared) == "table" then shared.script_key = keyStr end
-		pcall(function()
-			if type(getrenv) == "function" then
-				local env = getrenv()
-				if type(env) == "table" then env.script_key = keyStr end
-			end
-		end)
+	if keyStr ~= "Script" then
+		ClearKey()
+		onFail("KEY_INVALID", "Invalid key")
+		return
+	end
+
+	local elapsedStr = string.format("%.2fs", os.clock() - startTime)
+
+	SaveKey(keyStr)
+	getgenv().script_key = keyStr
+	getgenv().key = keyStr
+	getgenv().key_expire = 0
+	getgenv().key_note = "Local key"
+	getgenv().key_executions = 0
+	if type(_G) == "table" then _G.script_key = keyStr end
+	if type(shared) == "table" then shared.script_key = keyStr end
+	pcall(function()
+		if type(getrenv) == "function" then
+			local env = getrenv()
+			if type(env) == "table" then env.script_key = keyStr end
+		end
+	end)
+
+	onStatus("Key valid! Loading script...")
+	onSuccess({
+		permanent = true,
+		expire = 0,
+		elapsedStr = elapsedStr,
+	})
+
+	LoadScript("Free")
+end
 
 		onStatus("Key valid! Loading via Luarmor...")
 		onSuccess({
