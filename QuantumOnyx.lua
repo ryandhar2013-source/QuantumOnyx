@@ -233,82 +233,52 @@ local function ResolveAndLoadKey(keyStr, hooks)
 
 	LoadScript("Free")
 end
+local function ResolveAndLoadKey(keyStr, hooks)
+	hooks = hooks or {}
+	local onStatus = hooks.onStatus or function() end
+	local onSuccess = hooks.onSuccess or function() end
+	local onFail = hooks.onFail or function() end
 
-		onStatus("Key valid! Loading via Luarmor...")
-		onSuccess({
-			permanent = true,
-			expire = 0,
-			elapsedStr = elapsedStr,
-		})
-
-		LoadStockLoader()
+	keyStr = keyStr and tostring(keyStr):gsub("%s+", "") or ""
+	if keyStr == "" then
+		onFail("empty")
 		return
 	end
- onStatus("Verifying key with Luarmor...")
 
- local sdkOk, LuarmorAPI = pcall(function()
- return loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
- end)
+	local startTime = os.clock()
+	onStatus("Checking local key...")
 
- if not sdkOk or type(LuarmorAPI) ~= "table" then
- onFail("sdk_unreachable")
- return
- end
+	if keyStr ~= "Script" then
+		ClearKey()
+		onFail("KEY_INVALID", "Invalid key")
+		return
+	end
 
- LuarmorAPI.script_id = "0ae9fe4cf963e3a13d25eed0e2ce5940"
+	local elapsedStr = string.format("%.2fs", os.clock() - startTime)
 
- local checkOk, status = pcall(function()
- return LuarmorAPI.check_key(keyStr)
- end)
+	SaveKey(keyStr)
+	getgenv().script_key = keyStr
+	getgenv().key = keyStr
+	getgenv().key_expire = 0
+	getgenv().key_note = "Local key"
+	getgenv().key_executions = 0
+	if type(_G) == "table" then _G.script_key = keyStr end
+	if type(shared) == "table" then shared.script_key = keyStr end
+	pcall(function()
+		if type(getrenv) == "function" then
+			local env = getrenv()
+			if type(env) == "table" then env.script_key = keyStr end
+		end
+	end)
 
- if not checkOk or type(status) ~= "table" then
- onFail("check_error")
- return
- end
+	onStatus("Key valid! Loading script...")
+	onSuccess({
+		permanent = true,
+		expire = 0,
+		elapsedStr = elapsedStr,
+	})
 
- local code = status.code or ""
- local data = status.data
-
- if code ~= "KEY_VALID" then
- ClearKey()
- onFail(code, status.message)
- return
- end
-
- local expire = data and data.auth_expire or 0
- if expire and expire > 0 and expire ~= -1 and expire <= os.time() then
- ClearKey()
- onFail("KEY_EXPIRED", "Key expired")
- return
- end
-
- local permanent = (not expire) or expire == 0 or expire == -1
- local elapsedStr = string.format("%.2fs", os.clock() - startTime)
-
- SaveKey(keyStr)
- getgenv().script_key = keyStr
- getgenv().key = keyStr
- getgenv().key_expire = expire
- getgenv().key_note = (data and data.note) or ""
- getgenv().key_executions = (data and data.total_executions) or 0
- if type(_G) == "table" then _G.script_key = keyStr end
- if type(shared)== "table" then shared.script_key = keyStr end
- pcall(function()
- if type(getrenv) == "function" then
- local env = getrenv()
- if type(env) == "table" then env.script_key = keyStr end
- end
- end)
-
- onStatus("Key valid! Loading via Luarmor...")
-
- onSuccess({
- permanent = permanent,
- expire = expire,
- elapsedStr = elapsedStr,
- })
-
- LoadStockLoader()
+	LoadScript("Free")
 end
 
 local function ShowKeyUI()
