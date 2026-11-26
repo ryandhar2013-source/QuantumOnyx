@@ -173,7 +173,7 @@ local function LoadStockLoader()
  end)
 end
 
-local function LoadScript("Premium")
+local function LoadScript(tier)
  if tier == "Free" then
  local url = Scripts.Free[GameId]
  if url then
@@ -187,64 +187,96 @@ local function LoadScript("Premium")
 end
 
 local function ResolveAndLoadKey(keyStr, hooks)
-	hooks = hooks or {}
-	local onStatus = hooks.onStatus or function() end
-	local onSuccess = hooks.onSuccess or function() end
-	local onFail = hooks.onFail or function() end
+ hooks = hooks or {}
+ local onStatus = hooks.onStatus or function() end
+ local onSuccess = hooks.onSuccess or function() end
+ local onFail = hooks.onFail or function() end
 
-	keyStr = keyStr and tostring(keyStr):gsub("%s+", "") or ""
-	if keyStr == "" then
-		onFail("empty")
-		return
-	end
+ keyStr = keyStr and tostring(keyStr):gsub("%s+", "") or ""
+ if keyStr == "" then
+ onFail("empty")
+ return
+ end
 
-	local startTime = os.clock()
-	onStatus("Checking local key...")
+ local startTime = os.clock()
+ onStatus("Verifying key with Luarmor...")
 
-	if keyStr ~= "Scriptx" then
-		ClearKey()
-		onFail("KEY_INVALID", "Invalid key")
-		return
-	end
+ local sdkOk, LuarmorAPI = pcall(function()
+ return loadstring(game:HttpGet("https://sdkapi-public.luarmor.net/library.lua"))()
+ end)
 
-	local elapsedStr = string.format("%.2fs", os.clock() - startTime)
+ if not sdkOk or type(LuarmorAPI) ~= "table" then
+ onFail("sdk_unreachable")
+ return
+ end
 
-	SaveKey(keyStr)
-	getgenv().script_key = keyStr
-	getgenv().key = keyStr
-	getgenv().key_expire = 0
-	getgenv().key_note = "Local key"
-	getgenv().key_executions = 0
-	if type(_G) == "table" then _G.script_key = keyStr end
-	if type(shared) == "table" then shared.script_key = keyStr end
-	pcall(function()
-		if type(getrenv) == "function" then
-			local env = getrenv()
-			if type(env) == "table" then env.script_key = keyStr end
-		end
-	end)
+ LuarmorAPI.script_id = "0ae9fe4cf963e3a13d25eed0e2ce5940"
 
-	onStatus("Key valid! Loading script...")
-	onSuccess({
-		permanent = true,
-		expire = 0,
-		elapsedStr = elapsedStr,
-	})
+ local checkOk, status = pcall(function()
+ return LuarmorAPI.check_key(keyStr)
+ end)
 
-	LoadScript("Premium")
+ if not checkOk or type(status) ~= "table" then
+ onFail("check_error")
+ return
+ end
+
+ local code = status.code or ""
+ local data = status.data
+
+ if code ~= "KEY_VALID" then
+ ClearKey()
+ onFail(code, status.message)
+ return
+ end
+
+ local expire = data and data.auth_expire or 0
+ if expire and expire > 0 and expire ~= -1 and expire <= os.time() then
+ ClearKey()
+ onFail("KEY_EXPIRED", "Key expired")
+ return
+ end
+
+ local permanent = (not expire) or expire == 0 or expire == -1
+ local elapsedStr = string.format("%.2fs", os.clock() - startTime)
+
+ SaveKey(keyStr)
+ getgenv().script_key = keyStr
+ getgenv().key = keyStr
+ getgenv().key_expire = expire
+ getgenv().key_note = (data and data.note) or ""
+ getgenv().key_executions = (data and data.total_executions) or 0
+ if type(_G) == "table" then _G.script_key = keyStr end
+ if type(shared)== "table" then shared.script_key = keyStr end
+ pcall(function()
+ if type(getrenv) == "function" then
+ local env = getrenv()
+ if type(env) == "table" then env.script_key = keyStr end
+ end
+ end)
+
+ onStatus("Key valid! Loading via Luarmor...")
+
+ onSuccess({
+ permanent = permanent,
+ expire = expire,
+ elapsedStr = elapsedStr,
+ })
+
+ LoadStockLoader()
 end
 
 local function ShowKeyUI()
  local submitting = false
 
-local supportInfo = {
-		{ label = "Discord", value = "discord.gg/quantumonyx" },
-		{ label = "Game", value = (pcall(function()
-			return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
-		end) and game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
-			or "Unknown" },
-		{ label = "Version", value = "v.Premium" },
-	}
+ local supportInfo = {
+ { label = "Discord", value = "discord.gg/quantumonyx" },
+ { label = "Game", value = (pcall(function()
+ return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+ end) and game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
+ or "Unknown" },
+ { label = "Version", value = "v.Freemium" },
+ }
 
  local SG = Instance.new("ScreenGui")
  SG.Name = "KL_" .. tostring(math.random(1e6))
@@ -800,7 +832,7 @@ local supportInfo = {
  SetStatus("No free version for this game.", Color3.fromRGB(255, 150, 80))
  else
  AnimateClose()
- LoadScript("Premium")
+ LoadScript("Free")
  end
  end)
 
