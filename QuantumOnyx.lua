@@ -201,7 +201,7 @@ local function ResolveAndLoadKey(keyStr, hooks)
 	local startTime = os.clock()
 	onStatus("Checking local key...")
 
-	if keyStr ~= "Script" then
+	if keyStr ~= "Scriptx" then
 		ClearKey()
 		onFail("KEY_INVALID", "Invalid key")
 		return
