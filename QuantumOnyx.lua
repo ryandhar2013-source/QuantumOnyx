@@ -800,7 +800,7 @@ local supportInfo = {
  SetStatus("No free version for this game.", Color3.fromRGB(255, 150, 80))
  else
  AnimateClose()
- LoadScript("Free")
+ LoadScript("Premium")
  end
  end)
 
