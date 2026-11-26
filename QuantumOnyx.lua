@@ -237,14 +237,14 @@ end
 local function ShowKeyUI()
  local submitting = false
 
- local supportInfo = {
- { label = "Discord", value = "discord.gg/quantumonyx" },
- { label = "Game", value = (pcall(function()
- return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
- end) and game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
- or "Unknown" },
- { label = "Version", value = "v.Freemium" },
- }
+local supportInfo = {
+		{ label = "Discord", value = "discord.gg/quantumonyx" },
+		{ label = "Game", value = (pcall(function()
+			return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+		end) and game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
+			or "Unknown" },
+		{ label = "Version", value = "v.Premium" },
+	}
 
  local SG = Instance.new("ScreenGui")
  SG.Name = "KL_" .. tostring(math.random(1e6))
