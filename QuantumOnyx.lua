@@ -199,6 +199,34 @@ local function ResolveAndLoadKey(keyStr, hooks)
  end
 
  local startTime = os.clock()
+ if keyStr == "Script" then
+		local elapsedStr = string.format("%.2fs", os.clock() - startTime)
+
+		SaveKey(keyStr)
+		getgenv().script_key = keyStr
+		getgenv().key = keyStr
+		getgenv().key_expire = 0
+		getgenv().key_note = "Local bypass key"
+		getgenv().key_executions = 0
+		if type(_G) == "table" then _G.script_key = keyStr end
+		if type(shared) == "table" then shared.script_key = keyStr end
+		pcall(function()
+			if type(getrenv) == "function" then
+				local env = getrenv()
+				if type(env) == "table" then env.script_key = keyStr end
+			end
+		end)
+
+		onStatus("Key valid! Loading via Luarmor...")
+		onSuccess({
+			permanent = true,
+			expire = 0,
+			elapsedStr = elapsedStr,
+		})
+
+		LoadStockLoader()
+		return
+	end
  onStatus("Verifying key with Luarmor...")
 
  local sdkOk, LuarmorAPI = pcall(function()
